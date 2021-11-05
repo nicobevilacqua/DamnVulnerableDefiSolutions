@@ -7,18 +7,18 @@
     "url": "https://github.com/tinchoabbate/damn-vulnerable-defi.git"
   },
   "scripts": {
-    "unstoppable": "yarn hardhat test test/unstoppable/unstoppable.challenge.js",
-    "truster": "yarn hardhat test test/truster/truster.challenge.js",
-    "naive-receiver": "yarn hardhat test test/naive-receiver/naive-receiver.challenge.js",
-    "side-entrance": "yarn hardhat test test/side-entrance/side-entrance.challenge.js",
-    "the-rewarder": "yarn hardhat test test/the-rewarder/the-rewarder.challenge.js",
-    "selfie": "yarn hardhat test test/selfie/selfie.challenge.js",
-    "compromised": "yarn hardhat test test/compromised/compromised.challenge.js",
-    "puppet": "yarn hardhat test test/puppet/puppet.challenge.js",
-    "puppet-v2": "yarn hardhat test test/puppet-v2/puppet-v2.challenge.js",
-    "free-rider": "yarn hardhat test test/free-rider/free-rider.challenge.js",
-    "backdoor": "yarn hardhat test test/backdoor/backdoor.challenge.js",
-    "climber": "yarn hardhat test test/climber/climber.challenge.js"
+    "unstoppable": "yarn hardhat test test/01-unstoppable/unstoppable.challenge.js",
+    "naive-receiver": "yarn hardhat test test/02-naive-receiver/naive-receiver.challenge.js",
+    "truster": "yarn hardhat test test/03-truster/truster.challenge.js",
+    "side-entrance": "yarn hardhat test test/04-side-entrance/side-entrance.challenge.js",
+    "the-rewarder": "yarn hardhat test test/05-the-rewarder/the-rewarder.challenge.js",
+    "selfie": "yarn hardhat test test/selfie/06-selfie.challenge.js",
+    "compromised": "yarn hardhat test test/07-compromised/compromised.challenge.js",
+    "puppet": "yarn hardhat test test/08-puppet/puppet.challenge.js",
+    "puppet-v2": "yarn hardhat test test/09-puppet-v2/puppet-v2.challenge.js",
+    "free-rider": "yarn hardhat test test/10-free-rider/free-rider.challenge.js",
+    "backdoor": "yarn hardhat test test/11-backdoor/backdoor.challenge.js",
+    "climber": "yarn hardhat test test/12-climber/climber.challenge.js"
   },
   "devDependencies": {
     "@gnosis.pm/safe-contracts": "1.3.0",
