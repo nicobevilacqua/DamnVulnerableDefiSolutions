@@ -1,51 +1,45 @@
 const { ethers } = require('hardhat');
 const { expect } = require('chai');
 
-describe('[Challenge] Naive receiver', function () {
-    let deployer, user, attacker;
+describe('[Challenge] Truster', function () {
+    let deployer, attacker;
 
-    // Pool has 1000 ETH in balance
-    const ETHER_IN_POOL = ethers.utils.parseEther('1000');
-
-    // Receiver has 10 ETH in balance
-    const ETHER_IN_RECEIVER = ethers.utils.parseEther('10');
+    const TOKENS_IN_POOL = ethers.utils.parseEther('1000000');
 
     before(async function () {
         /** SETUP SCENARIO - NO NEED TO CHANGE ANYTHING HERE */
-        [deployer, user, attacker] = await ethers.getSigners();
+        [deployer, attacker] = await ethers.getSigners();
 
-        const LenderPoolFactory = await ethers.getContractFactory('NaiveReceiverLenderPool', deployer);
-        const FlashLoanReceiverFactory = await ethers.getContractFactory('FlashLoanReceiver', deployer);
-        const NaiveReceiverAttackerFactory = await ethers.getContractFactory('NaiveReceiverAttacker', deployer);
+        const DamnValuableToken = await ethers.getContractFactory('DamnValuableToken', deployer);
+        const TrusterLenderPool = await ethers.getContractFactory('TrusterLenderPool', deployer);
 
-        this.pool = await LenderPoolFactory.deploy();
-        await deployer.sendTransaction({ to: this.pool.address, value: ETHER_IN_POOL });
-        
-        expect(await ethers.provider.getBalance(this.pool.address)).to.be.equal(ETHER_IN_POOL);
-        expect(await this.pool.fixedFee()).to.be.equal(ethers.utils.parseEther('1'));
+        this.token = await DamnValuableToken.deploy();
+        this.pool = await TrusterLenderPool.deploy(this.token.address);
 
-        this.receiver = await FlashLoanReceiverFactory.deploy(this.pool.address);
-        await deployer.sendTransaction({ to: this.receiver.address, value: ETHER_IN_RECEIVER });
-        
-        this.attacker = await NaiveReceiverAttackerFactory.deploy(this.receiver.address, this.pool.address);
+        await this.token.transfer(this.pool.address, TOKENS_IN_POOL);
 
-        expect(await ethers.provider.getBalance(this.receiver.address)).to.be.equal(ETHER_IN_RECEIVER);
+        expect(
+            await this.token.balanceOf(this.pool.address)
+        ).to.equal(TOKENS_IN_POOL);
+
+        expect(
+            await this.token.balanceOf(attacker.address)
+        ).to.equal('0');
     });
 
     it('Exploit', async function () {
-        const tx = await this.attacker.attack();
-        await tx.wait();
+        /** CODE YOUR EXPLOIT HERE  */
     });
 
     after(async function () {
         /** SUCCESS CONDITIONS */
 
-        // All ETH has been drained from the receiver
+        // Attacker has taken all tokens from the pool
         expect(
-            await ethers.provider.getBalance(this.receiver.address)
-        ).to.be.equal('0');
+            await this.token.balanceOf(attacker.address)
+        ).to.equal(TOKENS_IN_POOL);
         expect(
-            await ethers.provider.getBalance(this.pool.address)
-        ).to.be.equal(ETHER_IN_POOL.add(ETHER_IN_RECEIVER));
+            await this.token.balanceOf(this.pool.address)
+        ).to.equal('0');
     });
 });

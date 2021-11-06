@@ -1,3 +1,11 @@
+![](../../cover.png)
+
+**A set of challenges to hack implementations of DeFi in Ethereum.**
+
+Created by [@tinchoabbate](https://twitter.com/tinchoabbate)
+
+---
+
 # Challenge #7 - Compromised
 
 While poking around a web service of one of the most popular DeFi projects in the space, you get a somewhat strange response from their server. This is a snippet:
@@ -21,5 +29,9 @@ This price is fetched form an on-chain oracle, and is based on three trusted rep
 
 Starting with only 0.1 ETH in balance, you must steal all ETH available in the exchange.
 
-- See contracts
-- Hack it
+- [See contracts](../../contracts/compromised)
+- [Hack it](./compromised.challenge.js)
+
+## SOLUTION
+- [See the explanation here](./SOLUTION.md)
+- [See the code here](./compromised.challenge.solved.js)

