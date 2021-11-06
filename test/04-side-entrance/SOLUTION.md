@@ -1,0 +1,1 @@
+The idea here is that we could borrow any amount of ETH, immediatly deposit it on the contract. And thus, hack the require condition regarding the contract balance.

@@ -1,3 +1,5 @@
+[Back]('../../README.md)
+
 ![](../../cover.png)
 
 **A set of challenges to hack implementations of DeFi in Ethereum.**
@@ -18,4 +20,4 @@ You start with 100 DVT tokens in balance.
 
 ## SOLUTION
 - [See the explanation here](./SOLUTION.md)
-- [See the code here](./unstoppable.challenge.js)
+- [See the code here](./unstoppable.challenge.solved.js)
