@@ -19,8 +19,8 @@ Created by [@tinchoabbate](https://twitter.com/tinchoabbate)
 8. [Puppet](./test/08-puppet)
 9. [Puppet v2](./test/09-puppet-v2)
 10. [Free Rider](./test/10-free-rider)
-11. [Backdoor](./test/11-backdoor) (TODO)
-12. [Climber](./test/12-climber) (TODO)
+11. [Backdoor](./test/11-backdoor)
+12. [Climber](./test/12-climber)
 
 ---
 ## Disclaimer
